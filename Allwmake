@@ -345,6 +345,42 @@ else
     echo "    optional component Metis was not found"
 fi
 
+# parMetis is optional
+echo ========================================
+echo Build parMetis decomposition
+
+# get PARMETIS_VERSION, PARMETIS_ARCH_PATH
+if settings=`$WM_PROJECT_DIR/bin/foamEtcFile config.sh/parmetis`
+then
+    . $settings
+fi
+if [ -d "$PARMETIS_VERSION" ]
+then
+
+    if [ -f $PARMETIS_ARCH_PATH/include/parmetis.h \
+      -a -r $FOAM_EXT_LIBBIN/libparmetis.so ]
+    then
+        echo "    parmetis header in $PARMETIS_ARCH_PATH/include"
+        echo "    parmetis libs   in $FOAM_EXT_LIBBIN"
+        echo
+    else
+    (
+        set -x
+        cd $PARMETIS_VERSION  || exit 1
+
+        # Change user settings automatically
+        sed -i -e 's=\(#define IDXTYPEWIDTH\).*=\1 '$WM_LABEL_SIZE'=' \
+            include/parmetis.h
+
+        make config shared=1 prefix=$PARMETIS_ARCH_PATH
+        make -j $WM_NCOMPPROCS install
+        cp $PARMETIS_ARCH_PATH/lib/libparmetis.so $FOAM_EXT_LIBBIN
+    )
+    fi
+else
+    echo "    optional component parMetis was not found"
+fi
+
 
 # CGAL is optional
 echo ========================================
